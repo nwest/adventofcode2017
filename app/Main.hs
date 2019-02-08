@@ -23,7 +23,7 @@ byTwo = reverse . foldl f []
     f g@(a:as) x = if length a == 1 then (x:a):as else [x] : g
 
 captcha :: [Int] -> Int
-captcha s = let fixedInput = reverse $ (head s : reverse s)
+captcha s = let fixedInput = reverse (head s : reverse s)
                 pairs = concatMap byTwo [fixedInput, tail fixedInput]
             in
               sum . map matchingCount $ pairs
@@ -61,18 +61,18 @@ removeGarbage = f ""
 removeGarbage' :: String -> String
 removeGarbage' = fst . foldl' f ("", True)
   where
-    f (xs, b) x | b == True, x == '<' = (xs, False)
-                | b == True           = (xs ++ [x], True)
-                | x == '>'            = (xs, True)
-                | otherwise           = (xs, False)
+    f (xs, b) x | b, x == '<' = (xs, False)
+                | b           = (xs ++ [x], True)
+                | x == '>'    = (xs, True)
+                | otherwise   = (xs, False)
 
 countGarbage' :: String -> Int
 countGarbage' = fst . foldl' f (0, True)
   where
-    f (a, b) x | b == True, x == '<' = (a, False)
-               | b == True           = (a, True)
-               | x == '>'            = (a, True)
-               | otherwise           = (succ a, False)
+    f (a, b) x | b, x == '<' = (a, False)
+               | b           = (a, True)
+               | x == '>'    = (a, True)
+               | otherwise   = (succ a, False)
 
 countDepthScore :: String -> Int
 countDepthScore = snd . foldr f (0,0)
