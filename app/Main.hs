@@ -5,6 +5,13 @@ module Main where
 import Data.List (foldl')
 import Control.Arrow
 
+import qualified Data.Map as M hiding (Map)
+import Data.Map (Map)
+
+import Text.Printf
+import Data.Char (ord)
+import Data.Bits (xor)
+
 
 main :: IO ()
 main = numberNine
@@ -85,26 +92,62 @@ numberNine = do
 
 -----------------------------------------
 
-tenTestKnot :: [Int]
-tenTestKnot = [0..4]
+type Hash = Map Int Int
 
-tenTestInput :: [Int]
-tenTestInput = [3, 4, 1, 5]
+hashReverse :: Hash -> Int -> Int -> Hash
+hashReverse m p i = let size   = M.size m
+                        keys   = take i . map (`mod` size) $ [p..]
+                        values = reverse . map (m M.!) $ keys
+                        helper (k,v) = M.insert k v
+                    in foldr helper m (zip keys values)
 
-tenKnot :: [Int]
-tenKnot = [0..255]
-
-tenInput :: [Int]
-tenInput = [227, 169, 3, 166, 246, 201, 0, 47, 1, 255, 2, 254, 96, 3, 97, 144]
-
-numberTen :: [Int] -> [Int] -> (Int, [Int])
-numberTen knot input = let newKnot = fst . foldl' f (knot, 0) $ input
-                           rotation = sum input + sum [0..(length input - 1)]
-                           --offset  = length input - (rotation `mod` length input)
-                       in (rotation, newKnot) -- take 2 . drop offset . cycle $ newKnot
+hash :: Hash -> Int -> [Int] -> Hash
+hash m c xs = helper m c xs 0 0
   where
-    f (knot', skip) len = let reversed = reverse . take len $ knot'
-                              rotate   = (++ reversed) . drop len $ knot'
-                              skipped  = take skip rotate
-                              rotate'  = (++ skipped) . drop skip $ rotate
-                          in (rotate', succ skip)
+    helper :: Hash -> Int -> [Int] -> Int -> Int -> Hash
+    helper m' c' [] p s  = helper m' (pred c') xs p s
+    helper m' c' (a:as) p s | c' == 0 = m'
+                            | otherwise = let m'' = hashReverse m' p a
+                                              p'  = p + a + s
+                                          in helper m'' c' as p' . succ $ s
+
+solvePart1 :: Int
+solvePart1 = let m = M.fromList . zip [0..255] $ [0..255]
+                 xs = [227, 169, 3, 166, 246, 201, 0, 47, 1, 255, 2, 254, 96, 3, 97, 144]
+             in product . take 2 . M.elems . hash m 1 $ xs
+
+hash64 :: Hash -> [Int] -> Hash
+hash64 m = hash m 64
+
+input10b :: String
+input10b = "1,2,3"
+
+inputPadding :: [Int]
+inputPadding = [17, 31, 73, 47, 23]
+
+ascii :: String -> [Int]
+ascii = map ord
+
+sparseHash :: String -> [Int]
+sparseHash s = let m = M.fromList . zip [0..255] $ [0..255]
+                   xs = ascii s ++ inputPadding
+               in M.elems . hash64 m $ xs
+
+densify :: [Int] -> Int
+densify = foldr1 xor
+
+denseHash :: String -> [Int]
+denseHash = map densify . by16 . sparseHash
+
+solvePart2 :: String -> String
+solvePart2 = hex . denseHash
+
+hex :: [Int] -> String
+hex = concatMap (printf "%02x")
+
+by16 :: [a] -> [[a]]
+by16 = foldr f []
+  where
+    f x [] = [[x]]
+    f x g@(a:as) = if length a < 16 then (x:a):as else [x] : g
+
