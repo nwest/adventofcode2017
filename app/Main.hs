@@ -111,43 +111,22 @@ hash m c xs = helper m c xs 0 0
                                               p'  = p + a + s
                                           in helper m'' c' as p' . succ $ s
 
+baseHash :: Hash
+baseHash = M.fromList . zip [0..255] $ [0..255]
+
 solvePart1 :: Int
-solvePart1 = let m = M.fromList . zip [0..255] $ [0..255]
-                 xs = [227, 169, 3, 166, 246, 201, 0, 47, 1, 255, 2, 254, 96, 3, 97, 144]
-             in product . take 2 . M.elems . hash m 1 $ xs
-
-hash64 :: Hash -> [Int] -> Hash
-hash64 m = hash m 64
-
-input10b :: String
-input10b = "1,2,3"
-
-inputPadding :: [Int]
-inputPadding = [17, 31, 73, 47, 23]
-
-ascii :: String -> [Int]
-ascii = map ord
+solvePart1 = product . take 2 . M.elems . hash baseHash 1 $ [227, 169, 3, 166, 246, 201, 0, 47, 1, 255, 2, 254, 96, 3, 97, 144]
 
 sparseHash :: String -> [Int]
-sparseHash s = let m = M.fromList . zip [0..255] $ [0..255]
-                   xs = ascii s ++ inputPadding
-               in M.elems . hash64 m $ xs
-
-densify :: [Int] -> Int
-densify = foldr1 xor
+sparseHash s = let xs = map ord s ++ [17, 31, 73, 47, 23]
+               in M.elems . hash baseHash 64 $ xs
 
 denseHash :: String -> [Int]
-denseHash = map densify . by16 . sparseHash
+denseHash = map (foldr1 xor) . by 16 . sparseHash
 
-solvePart2 :: String -> String
-solvePart2 = hex . denseHash
+solvePart2 :: String
+solvePart2 = concatMap (printf "%02x") . denseHash $ "227,169,3,166,246,201,0,47,1,255,2,254,96,3,97,144"
 
-hex :: [Int] -> String
-hex = concatMap (printf "%02x")
-
-by16 :: [a] -> [[a]]
-by16 = foldr f []
-  where
-    f x [] = [[x]]
-    f x g@(a:as) = if length a < 16 then (x:a):as else [x] : g
-
+by :: Int -> [a] -> [[a]]
+by _ [] = []
+by n xs = take n xs : by n (drop n xs)
