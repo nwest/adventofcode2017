@@ -130,3 +130,41 @@ solvePart2 = concatMap (printf "%02x") . denseHash $ "227,169,3,166,246,201,0,47
 by :: Int -> [a] -> [[a]]
 by _ [] = []
 by n xs = take n xs : by n (drop n xs)
+
+-------------------
+
+type Cube = (Int, Int, Int)
+
+move :: Cube -> String -> Cube
+move (x, y, z) "n"  = (x, succ y, pred z)
+move (x, y, z) "ne" = (succ x, y, pred z)
+move (x, y, z) "se" = (succ x, pred y, z)
+move (x, y, z) "s"  = (x, pred y, succ z)
+move (x, y, z) "sw" = (pred x, y, succ z)
+move (x, y, z) "nw" = (pred x, succ y, z)
+move c _ = c
+
+route :: [String] -> (Cube, Int)
+route = foldl' f ((0, 0, 0), 0)
+  where
+    f (c, m) x = let c' = move c x
+                     d = originDistance c'
+                 in (c', max m d)
+
+cleanDirections :: String -> [String]
+cleanDirections = words . foldr f ""
+  where
+    f ',' = (' ' :)
+    f x   = (x :)
+
+originDistance :: Cube -> Int
+originDistance (x, y, z) = (abs x + abs y + abs z) `div` 2
+
+numberEleven :: IO ()
+numberEleven = do
+  input <- cleanDirections <$> readFile "/Users/nwest/AoC/2017/11"
+  let (c, d) = route input
+  print . originDistance $ c
+  print d
+
+-------------------
