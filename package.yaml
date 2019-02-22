@@ -35,6 +35,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - adventofcode2017
+    - containers
 
 tests:
   adventofcode2017-test:
