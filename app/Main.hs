@@ -36,11 +36,21 @@ digitPairs xs = let step = length xs `div` 2
 matchingSum :: [(Int, Int)] -> Int
 matchingSum = sum . map fst . filter (uncurry (==))
 
-numberOne :: IO () 
+numberOne :: IO ()
 numberOne = do
   input <- map (\x -> read [x] :: Int) . head . lines <$> readFile "/Users/nwest/AoC/2017/1"
   print . captcha $ input
   print . matchingSum . digitPairs $ input
+
+-----------------------------------------
+
+checksum :: [Int] -> Int
+checksum xs = maximum xs - minimum xs
+
+numberTwo :: IO ()
+numberTwo = do
+  input <- map (map (\x -> read x :: Int) . words) . lines <$> readFile "/Users/nwest/AoC/2017/2"
+  print . sum . map checksum $ input
 
 -----------------------------------------
 
