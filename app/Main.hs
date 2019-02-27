@@ -2,7 +2,7 @@
 
 module Main where
 
-import Data.List (foldl')
+import Data.List (foldl', sort)
 import Control.Arrow
 
 import qualified Data.Map as M hiding (Map)
@@ -60,6 +60,19 @@ numberTwo = do
   input <- map (map (\x -> read x :: Int) . words) . lines <$> readFile "/Users/nwest/AoC/2017/2"
   print . sum . map checksum $ input
   print . sum . map checksum2 $ input
+
+-----------------------------------------
+
+validPassword :: [String] -> Bool
+validPassword [] = True
+validPassword (x:xs) = x `notElem` xs && validPassword xs
+
+numberFour :: IO ()
+numberFour = do
+  input <- map words . lines <$> readFile "/Users/nwest/AoC/2017/4"
+  let validPasswords = length . filter validPassword
+  print . validPasswords $ input
+  print . validPasswords . map (map sort) $ input
 
 -----------------------------------------
 
