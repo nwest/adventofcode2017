@@ -44,13 +44,22 @@ numberOne = do
 
 -----------------------------------------
 
+combinations :: [a] -> [(a, a)]
+combinations xs = concat [ zip (repeat b) . drop a $ xs | (a, b) <- zip [1..] xs ]
+
 checksum :: [Int] -> Int
 checksum xs = maximum xs - minimum xs
+
+checksum2 :: [Int] -> Int
+checksum2 xs = let combos = combinations xs ++ combinations (reverse xs)
+                   (x, y) = head . filter (\(a, b) -> a `mod` b == 0) $ combos
+               in x `div` y
 
 numberTwo :: IO ()
 numberTwo = do
   input <- map (map (\x -> read x :: Int) . words) . lines <$> readFile "/Users/nwest/AoC/2017/2"
   print . sum . map checksum $ input
+  print . sum . map checksum2 $ input
 
 -----------------------------------------
 
