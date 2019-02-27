@@ -16,25 +16,31 @@ import Data.Bits (xor)
 main :: IO ()
 main = numberNine
 
-byTwo :: [a] -> [[a]]
-byTwo = reverse . foldl f []
-  where
-    f [] x = [[x]]
-    f g@(a:as) x = if length a == 1 then (x:a):as else [x] : g
-
 captcha :: [Int] -> Int
 captcha s = let fixedInput = reverse (head s : reverse s)
-                pairs = concatMap byTwo [fixedInput, tail fixedInput]
+                pairs = concatMap (by 2) [fixedInput, tail fixedInput]
             in
               sum . map matchingCount $ pairs
-  where 
+  where
     matchingCount [a, b] = if a == b then a else 0
     matchingCount _ = 0
+
+digitPairs :: [a] -> [(a, a)]
+digitPairs xs = let step = length xs `div` 2
+                in f xs step (cycle xs)
+  where 
+    f [] _ _ = []
+    f (x':xs') s r = let pairDigit = head . drop s . take (succ s) $ r
+                     in (x', pairDigit) : f xs' s (tail r)
+
+matchingSum :: [(Int, Int)] -> Int
+matchingSum = sum . map fst . filter (uncurry (==))
 
 numberOne :: IO () 
 numberOne = do
   input <- map (\x -> read [x] :: Int) . head . lines <$> readFile "/Users/nwest/AoC/2017/1"
   print . captcha $ input
+  print . matchingSum . digitPairs $ input
 
 -----------------------------------------
 
