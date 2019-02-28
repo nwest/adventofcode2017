@@ -2,11 +2,14 @@
 
 module Main where
 
-import Data.List (foldl', sort)
+import Data.List (foldl', sort, elemIndex)
 import Control.Arrow
 
 import qualified Data.Map as M hiding (Map)
 import Data.Map (Map)
+
+import qualified Data.Set as S hiding (Set)
+import Data.Set (Set)
 
 import Text.Printf
 import Data.Char (ord)
@@ -73,6 +76,50 @@ numberFour = do
   let validPasswords = length . filter validPassword
   print . validPasswords $ input
   print . validPasswords . map (map sort) $ input
+
+-----------------------------------------
+
+type Memory = [Int]
+type Offset = Int
+type Allocation = Int
+
+daySixInput :: [Int]
+daySixInput = [5, 1, 10, 0, 1, 7, 13, 14, 3, 12, 8, 10, 7, 12, 0, 6]
+
+distribute :: Memory -> Offset -> Allocation -> Memory
+distribute m _ 0 = m
+distribute m o a = let after = drop o m
+                       blocksLeft = length after
+                       moveDistance = min blocksLeft a
+                       m' = take o m ++ (map succ . take moveDistance $ after) ++ drop moveDistance after
+                   in distribute m' 0 (max 0 (a - blocksLeft))
+
+maxMemOffset :: Memory -> Int
+maxMemOffset m = let maxBlock = maximum m
+                     offset = elemIndex maxBlock m
+                 in f offset
+  where
+    f Nothing = 0
+    f (Just x) = x
+
+cycleMem :: Memory -> Memory
+cycleMem m = let count = maximum m
+                 offset = maxMemOffset m
+                 m' = take offset m ++ [0] ++ drop (succ offset) m
+             in distribute m' (succ offset) count
+
+
+memoryCycles :: Memory -> Set Memory -> (Int, Memory)
+memoryCycles m s = if S.member m s
+                    then (S.size s, m)
+                    else memoryCycles (cycleMem m) (S.insert m s)
+
+numberSix :: Memory -> Int
+numberSix m = fst (memoryCycles m S.empty)
+
+numberSixB :: Memory -> Int
+numberSixB m = let rep = snd (memoryCycles m S.empty)
+               in numberSix rep
 
 -----------------------------------------
 
