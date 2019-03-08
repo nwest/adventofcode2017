@@ -69,16 +69,14 @@ numberTwo = do
 
 type Coordinate = (Int, Int)
 type SquareSize = Int
-data MoveSpiral = UpS | DownS | LeftS | RightS deriving (Show)
+data Movement = UpS | DownS | LeftS | RightS deriving (Show)
 
-directions :: SquareSize -> [MoveSpiral]
-directions s = let m = replicate (pred s)
-                   thisCircle = concat [tail (m UpS), m LeftS, m DownS, m RightS, [RightS]]
-                in thisCircle ++ directions (s + 2)
+path :: SquareSize -> [Movement]
+path s = let m = replicate (pred s)
+          in concat [tail (m UpS), m LeftS, m DownS, m RightS, [RightS], path (s+2)]
 
 spiralTo :: Int -> Int
-spiralTo end = let dirs = take (end - 2) . directions $ 3
-                   (x,y) = foldl' f (1,0) dirs
+spiralTo end = let (x,y) = foldl' f (1,0) . take (end - 2) . path $ 3
                in abs x + abs y
   where
     f (x,y) UpS    = (x, succ y)
