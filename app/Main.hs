@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 
 module Main where
 
@@ -63,6 +64,57 @@ numberTwo = do
   input <- map (map (\x -> read x :: Int) . words) . lines <$> readFile "/Users/nwest/AoC/2017/2"
   print . sum . map checksum $ input
   print . sum . map checksum2 $ input
+
+-----------------------------------------
+
+type Coordinate = (Int, Int)
+type SquareSize = Int
+data MoveSpiral = UpS | DownS | LeftS | RightS deriving (Show)
+
+moveS :: Coordinate -> MoveSpiral -> Coordinate
+moveS (x,y) UpS    = (x, succ y)
+moveS (x,y) DownS  = (x, pred y)
+moveS (x,y) LeftS  = (pred x, y)
+moveS (x,y) RightS = (succ x, y)
+
+directions :: SquareSize -> [MoveSpiral]
+directions s = let ammount = replicate (succ s)
+                   t = ammount LeftS
+                   l = ammount DownS
+                   b = ammount RightS
+                   r = ammount UpS
+               in tail r ++ cycle (t ++ l ++ b ++ r)
+
+spiralTo :: (Coordinate, Int) -> SquareSize -> Int -> Coordinate
+spiralTo (c, i) s end = let steps = end - i
+                            dir = take steps . directions $ s
+                          in foldl moveS c dir
+
+day3Input :: Int
+day3Input = 312051
+
+squareSides :: [Int]
+squareSides = [1,3..]
+
+squares :: [Int]
+squares = map (^2) squareSides
+
+innerSquares :: Int -> [Int]
+innerSquares x = takeWhile (< x) squares
+
+day3 :: Int -> Int
+day3 input = let start = succ . maximum . innerSquares $ input
+                 rings = succ . length . innerSquares $ input
+                 ycoord = if rings < 3 then 0 else 2 - rings
+                 (x, y) = spiralTo ((pred rings, ycoord), start) (maximum . take rings $ squareSides) input
+             in abs x + abs y
+{-
+  1  0,  0
+  2  1,  0
+  3  2, -1
+  4  3, -2
+  5  4, -3
+-}
 
 -----------------------------------------
 
