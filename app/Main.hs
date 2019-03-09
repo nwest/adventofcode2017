@@ -71,18 +71,36 @@ type Coordinate = (Int, Int)
 type SquareSize = Int
 data Movement = UpS | DownS | LeftS | RightS deriving (Show)
 
+manhattan :: Coordinate -> Coordinate -> Int
+manhattan (x,y) (x',y') = abs (x - x') + abs (y - y')
+
+adjacent :: Coordinate -> Coordinate -> Bool
+adjacent c c' = manhattan c c' == 1
+
+diagonal :: Coordinate -> Coordinate -> Bool
+diagonal (x,y) (x',y') = abs (x-x') == 1 && abs (y-y') == 1
+
 path :: SquareSize -> [Movement]
 path s = let m = replicate (pred s)
-          in concat [tail (m UpS), m LeftS, m DownS, m RightS, [RightS], path (s+2)]
+         in concat [tail (m UpS), m LeftS, m DownS, m RightS, [RightS], path (s+2)]
+
+moveC :: Coordinate -> Movement -> Coordinate
+moveC (x,y) UpS    = (x, succ y)
+moveC (x,y) DownS  = (x, pred y)
+moveC (x,y) LeftS  = (pred x, y)
+moveC (x,y) RightS = (succ x, y)
 
 spiralTo :: Int -> Int
-spiralTo end = let (x,y) = foldl' f (1,0) . take (end - 2) . path $ 3
+spiralTo end = let (x,y) = foldl' moveC (1,0) . take (end - 2) . path $ 3
                in abs x + abs y
+
+firstBiggerThan :: Int -> Int
+firstBiggerThan i = head . filter (> i) . map fst . foldl' f [(1, (0,0)), (1, (1,0))] . take 1000 . path $ 3
   where
-    f (x,y) UpS    = (x, succ y)
-    f (x,y) DownS  = (x, pred y)
-    f (x,y) LeftS  = (pred x, y)
-    f (x,y) RightS = (succ x, y)
+    f xs m = let prev = last xs
+                 nextCoord = moveC (snd prev) m
+                 nextTotal = sum . map fst . filter (\(_, c)-> diagonal nextCoord c || adjacent nextCoord c) $ xs
+             in xs ++ [(nextTotal, nextCoord)]
 
 -----------------------------------------
 
