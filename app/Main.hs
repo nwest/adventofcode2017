@@ -117,6 +117,33 @@ numberFour = do
 
 -----------------------------------------
 
+type Jumps = Map Int Int
+type Times = Int
+
+trampoline :: Jumps -> Offset -> Times -> Times
+trampoline jumps offset times = if M.notMember offset jumps
+                                  then times
+                                  else let oldValue = jumps M.! offset
+                                           newJumps = M.adjust succ offset jumps
+                                       in trampoline newJumps (offset + oldValue) (succ times)
+
+trampoline2 :: Jumps -> Offset -> Times -> Times
+trampoline2 jumps offset times = if M.notMember offset jumps
+                                    then times
+                                    else let oldValue = jumps M.! offset
+                                             f = if oldValue > 2 then pred else succ
+                                             newJumps = M.adjust f offset jumps
+                                         in trampoline2 newJumps (offset + oldValue) (succ times)
+
+numberFive :: IO ()
+numberFive = do
+  input <- map (\x -> read x :: Int) . lines <$> readFile "/Users/nwest/AoC/2017/5"
+  let mapped = M.fromList . zip [0..] $ input
+  print . trampoline mapped 0 $ 0
+  print . trampoline2 mapped 0 $ 0
+
+-----------------------------------------
+
 type Memory = [Int]
 type Offset = Int
 type Allocation = Int
