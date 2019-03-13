@@ -3,7 +3,7 @@
 
 module Main where
 
-import Data.List (foldl', sort, elemIndex)
+import Data.List (foldl', sort, elemIndex, group, sortOn)
 import Control.Arrow
 
 import qualified Data.Map as M hiding (Map)
@@ -15,6 +15,8 @@ import Data.Set (Set)
 import Text.Printf
 import Data.Char (ord)
 import Data.Bits (xor)
+
+import Data.Ord
 
 
 main :: IO ()
@@ -185,6 +187,77 @@ numberSix m = fst (memoryCycles m S.empty)
 numberSixB :: Memory -> Int
 numberSixB m = let rep = snd (memoryCycles m S.empty)
                in numberSix rep
+
+-----------------------------------------
+
+type Groups = Map String [String]
+type Weights = Map String Int
+data Tower = Tower String Int [Tower] deriving Show
+
+removeSpecial :: String -> String
+removeSpecial = foldr (\x acc-> if x `notElem` "(),->" then x:acc else acc) ""
+
+towerWeights :: [[String]] -> Map String Int
+towerWeights = M.fromList . map (\xs -> (head xs, f xs))
+  where
+    f xs' = read ( xs' !! 1) :: Int
+
+towerGroups :: [[String]] -> Map String [String]
+towerGroups = M.fromList . map (\x-> (head x, drop 2 x)) . filter (\x-> length x > 2)
+
+parseTower :: Groups -> Weights -> String -> Tower
+parseTower g w s = Tower s (f (M.lookup s w)) (h (M.lookup s g))
+  where
+    f Nothing = 0
+    f (Just x) = x
+    h Nothing = []
+    h (Just xs) = sortOn (Data.Ord.Down . towerWeight) . map (parseTower g w) $ xs 
+
+towerWeight :: Tower -> Int
+towerWeight (Tower _ i ts) = sum (i : map towerWeight ts)
+
+subWeights :: Tower -> [Int]
+subWeights (Tower _ _ ts) = map towerWeight ts
+
+uniqueOffset :: [Int] -> Int
+uniqueOffset [] = 0
+uniqueOffset (x:xs) = if x `elem` xs then 1 + uniqueOffset xs else 0
+
+hasUnique :: [Int] -> Bool
+hasUnique xs = (length . group . sort $ xs) > 1
+
+balanceTower :: Tower -> Tower
+balanceTower t@(Tower _ _ ts) = if hasUnique (subWeights t) 
+                                then let uniqueO = uniqueOffset (subWeights t)
+                                     in balanceTower (head . drop uniqueO $ ts)
+                                else t
+
+parentID :: Groups -> String -> String
+parentID g s = fst . head . filter (\(_,v)-> s `elem` v). M.toList $ g
+
+parentTower :: Groups -> Weights -> Tower -> Tower
+parentTower g w (Tower s _ _) = let parent = parentID g s
+                                in parseTower g w parent
+
+baseWeight :: Tower -> Int
+baseWeight (Tower _ i _) = i
+
+change :: Tower -> Int
+change (Tower _ _ []) = 0
+change (Tower _ _ ts) = let (x:xs) = map towerWeight ts
+                        in head xs - x
+
+numberSeven :: IO ()
+numberSeven = do
+  input <- map (words . removeSpecial) . lines <$> readFile "/Users/nwest/AoC/2017/7"
+  let baseTower = head . head . filter (\x -> length x == 1) . group . sort . concatMap (\x -> head x : drop 2 x) $ input
+      weights = towerWeights input
+      groups = towerGroups input
+      tower = parseTower groups weights baseTower
+      unbalanced =  balanceTower tower
+      unbalancedParent = parentTower groups weights unbalanced
+  print baseTower
+  print (baseWeight unbalanced + change unbalancedParent)
 
 -----------------------------------------
 
